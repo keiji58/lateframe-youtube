@@ -3,17 +3,11 @@ const { DEFAULT_SETTINGS, STORAGE_KEYS } = SYNC_TUBE;
 const INIT_DEBOUNCE_MS = 500;
 const RETRY_INTERVAL_MS = 1000;
 
-let settings = { ...DEFAULT_SETTINGS, debug: false };
+let settings = { ...DEFAULT_SETTINGS };
 let frameDelay = null;
 let attachedVideo = null;
 let initTimer = null;
 let retryTimer = null;
-
-function log(...args) {
-  if (settings.debug) {
-    console.log("[Sync Tube]", ...args);
-  }
-}
 
 function findMoviePlayer() {
   return document.getElementById("movie_player");
@@ -44,30 +38,20 @@ function teardown() {
 
 function applySettings() {
   if (!settings.enabled || settings.delayMs <= 0) {
-    log("inactive", { enabled: settings.enabled, delayMs: settings.delayMs });
     teardown();
-    updateDebugStatus({ active: false, reason: "enabled_or_delay" });
     return;
   }
 
   const player = findMoviePlayer();
 
   if (SYNC_TUBE.isAdPlaying(player)) {
-    log("ad playing — extension paused");
     teardown();
-    updateDebugStatus({ active: false, reason: "ad" });
     return;
   }
 
   const video = findMainVideo(player);
 
   if (!video || !player) {
-    log("player not ready", { player: !!player, video: !!video });
-    updateDebugStatus({
-      active: false,
-      reason: "no_player",
-      moviePlayer: !!player,
-    });
     return;
   }
 
@@ -75,21 +59,11 @@ function applySettings() {
     teardown();
     attachedVideo = video;
     bindVideoLifecycle(video);
-    frameDelay = new FrameDelay(video, player, { debug: settings.debug });
+    frameDelay = new FrameDelay(video, player);
     frameDelay.start();
-    log("attached", { delayMs: settings.delayMs });
   }
 
   frameDelay.setDelayMs(settings.delayMs);
-  updateDebugStatus(frameDelay.getStatus());
-}
-
-function updateDebugStatus(status) {
-  window.__syncTube = {
-    settings: { ...settings },
-    status,
-    refresh: () => applySettings(),
-  };
 }
 
 function scheduleInit() {
@@ -104,12 +78,10 @@ async function loadSettings() {
   const stored = await chrome.storage.sync.get([
     STORAGE_KEYS.enabled,
     STORAGE_KEYS.delayMs,
-    STORAGE_KEYS.debug,
   ]);
   settings = {
     enabled: stored[STORAGE_KEYS.enabled] ?? DEFAULT_SETTINGS.enabled,
     delayMs: stored[STORAGE_KEYS.delayMs] ?? DEFAULT_SETTINGS.delayMs,
-    debug: stored[STORAGE_KEYS.debug] ?? false,
   };
   applySettings();
 }
@@ -202,10 +174,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (changes[STORAGE_KEYS.delayMs]) {
     settings.delayMs = changes[STORAGE_KEYS.delayMs].newValue;
   }
-  if (changes[STORAGE_KEYS.debug]) {
-    settings.debug = changes[STORAGE_KEYS.debug].newValue;
-    frameDelay?.setDebug?.(settings.debug);
-  }
 
   if (!settings.enabled) {
     teardown();
@@ -215,7 +183,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
   applySettings();
 });
 
-log("content script loaded", location.href);
 loadSettings();
 watchNavigation();
 watchPlayerMount();

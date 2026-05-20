@@ -42,41 +42,12 @@ class FrameDelay {
   #didLongPress = false;
   #suppressNextClick = false;
   #savedPlaybackRate = 1;
-  #debug = false;
   #bufferReady = false;
 
-  constructor(video, playerRoot, options = {}) {
+  constructor(video, playerRoot) {
     this.#video = video;
     this.#container = playerRoot;
     this.#captureCanvas = document.createElement("canvas");
-    this.#debug = !!options.debug;
-  }
-
-  setDebug(enabled) {
-    this.#debug = !!enabled;
-  }
-
-  getStatus() {
-    const span =
-      this.#frameQueue.length >= 2
-        ? this.#frameQueue[this.#frameQueue.length - 1].mediaTime -
-          this.#frameQueue[0].mediaTime
-        : 0;
-    return {
-      active: this.#active,
-      delayMs: this.#delayMs,
-      bufferReady: this.#bufferReady,
-      queueLength: this.#frameQueue.length,
-      queueSpanSec: span,
-      videoPaused: this.#video.paused,
-      overlay: !!this.#container.querySelector(`.${OVERLAY_CLASS}`),
-    };
-  }
-
-  #log(...args) {
-    if (this.#debug) {
-      console.log("[Sync Tube]", ...args);
-    }
   }
 
   setDelayMs(ms) {
@@ -99,7 +70,7 @@ class FrameDelay {
     this.#updateVideoVisibility();
     this.#startCaptureLoop();
     this.#bindVideoEvents();
-    this.#setStatus("バッファ準備中…", { show: false });
+    this.#setStatus("", { ready: false });
   }
 
   stop() {
@@ -134,7 +105,7 @@ class FrameDelay {
     if (!overlay) {
       overlay = document.createElement("div");
       overlay.className = OVERLAY_CLASS;
-      overlay.innerHTML = `<canvas></canvas><div class="${STATUS_CLASS}" hidden></div>`;
+      overlay.innerHTML = `<canvas></canvas><div class="${STATUS_CLASS}"></div>`;
       const style = document.createElement("style");
       style.textContent = `
         .${OVERLAY_CLASS} {
@@ -170,6 +141,13 @@ class FrameDelay {
           color: #fff;
           background: rgba(0, 0, 0, 0.75);
           pointer-events: none;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.25s ease;
+        }
+        #movie_player.${PLAYER_ACTIVE_CLASS}.ytp-show-controls .${STATUS_CLASS}.${STATUS_CLASS}-ready {
+          opacity: 1;
+          visibility: visible;
         }
         .${OVERLAY_CLASS} canvas {
           width: 100%;
@@ -517,7 +495,7 @@ class FrameDelay {
     this.#frameQueue = [];
     this.#bufferReady = false;
     this.#updateVideoVisibility();
-    this.#setStatus("バッファ準備中…", { show: false });
+    this.#setStatus("", { ready: false });
   };
 
   #updateVideoVisibility() {
@@ -531,17 +509,12 @@ class FrameDelay {
     }
   }
 
-  #setStatus(text, { show = false } = {}) {
+  #setStatus(text, { ready = false } = {}) {
     if (!this.#statusEl) {
       return;
     }
-    const visible = show || this.#debug;
-    if (!visible) {
-      this.#statusEl.hidden = true;
-      return;
-    }
-    this.#statusEl.hidden = false;
     this.#statusEl.textContent = text;
+    this.#statusEl.classList.toggle(`${STATUS_CLASS}-ready`, ready);
   }
 
   #checkBufferReady() {
@@ -673,8 +646,7 @@ class FrameDelay {
     this.#bufferReady = this.#checkBufferReady();
     if (this.#bufferReady && !wasReady) {
       this.#updateVideoVisibility();
-      this.#setStatus(`Sync Tube: 映像 +${this.#delayMs}ms`, { show: true });
-      this.#log("buffer ready", this.getStatus());
+      this.#setStatus(`SyncTube: +${this.#delayMs}ms`, { ready: true });
     }
   }
 

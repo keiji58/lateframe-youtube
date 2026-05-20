@@ -94,12 +94,6 @@ header h1 {
   color: #e8a87c;
 }
 
-.debug-row {
-  margin-top: 12px;
-  font-size: 12px;
-  color: #aaa;
-}
-
 input[type="checkbox"] {
   width: 18px;
   height: 18px;

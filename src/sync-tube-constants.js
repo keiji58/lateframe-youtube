@@ -2,7 +2,6 @@ const SYNC_TUBE = {
   STORAGE_KEYS: {
     enabled: "enabled",
     delayMs: "delayMs",
-    debug: "debug",
   },
   DEFAULT_SETTINGS: {
     enabled: true,

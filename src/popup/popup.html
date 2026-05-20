@@ -1,25 +1,25 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Sync Tube</title>
+    <title>SyncTube</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <header>
-      <h1>Sync Tube</h1>
-      <p class="subtitle">YouTube 映像遅延</p>
+      <h1>SyncTube</h1>
+      <p class="subtitle">YouTube video delay</p>
     </header>
 
     <label class="toggle-row">
-      <span>有効</span>
+      <span>Enabled</span>
       <input type="checkbox" id="enabled" checked />
     </label>
 
     <section class="delay-section">
       <div class="delay-header">
-        <label for="delayMs">映像遅延</label>
+        <label for="delayMs">Video delay</label>
         <output id="delayValue" for="delayMs">0 ms</output>
       </div>
       <input
@@ -34,19 +34,14 @@
     </section>
 
     <p class="hint warn">
-      <strong>映像遅延は 1ms 以上</strong>にしてください（0 のときは何も起きません）。
+      Set <strong>video delay to at least 1 ms</strong> (nothing happens at 0).
     </p>
     <p class="hint">
-      拡張を入れたあと、開いている YouTube タブは<strong>再読み込み</strong>が必要です。
+      After installing the extension, <strong>reload</strong> any open YouTube tabs.
     </p>
     <p class="hint">
-      無線ヘッドホンで音が遅れる場合、スライダーを上げて口と音を合わせてください。
+      If wireless headphones make audio feel late, raise the slider to match lip sync.
     </p>
-
-    <label class="toggle-row debug-row">
-      <span>デバッグログ</span>
-      <input type="checkbox" id="debug" />
-    </label>
 
     <script src="../sync-tube-constants.js"></script>
     <script src="popup.js"></script>
