@@ -1,9 +1,17 @@
 const FRAME_QUEUE_MAX = SYNC_TUBE.FRAME_QUEUE_MAX;
 
 const OVERLAY_CLASS = "sync-tube-overlay";
+const OVERLAY_VISIBLE_CLASS = "sync-tube-overlay-visible";
 const STATUS_CLASS = "sync-tube-status";
 const HIDDEN_VIDEO_CLASS = "sync-tube-video-hidden";
-const OVERLAY_Z_INDEX = 2500;
+const PLAYER_ACTIVE_CLASS = "sync-tube-player-active";
+/** Video layer; chrome boosted via CSS when active */
+const OVERLAY_Z_INDEX = 60;
+const CONTROLS_HIDE_DELAY_MS = 2500;
+const LONG_PRESS_MS = 450;
+const LONG_PRESS_PLAYBACK_RATE = 2;
+const CHROME_SELECTOR =
+  ".ytp-chrome-bottom, .ytp-chrome-top, .ytp-button, .ytp-progress-bar-container, .ytp-progress-bar, .ytp-play-button, .ytp-tooltip, .ytp-panel, .ytp-popup";
 
 /**
  * Delays video display via frame buffer + canvas while audio plays from the source video.
@@ -22,6 +30,18 @@ class FrameDelay {
   #usingRvfc = false;
   #active = false;
   #captureCanvas;
+  #captureCtx = null;
+  #overlayEl = null;
+  #onPlayerPointerActivity = null;
+  #onPlayerClick = null;
+  #onPlayerDblClick = null;
+  #onPlayerPointerDown = null;
+  #onPlayerPointerUp = null;
+  #controlsHideTimer = null;
+  #longPressTimer = null;
+  #didLongPress = false;
+  #suppressNextClick = false;
+  #savedPlaybackRate = 1;
   #debug = false;
   #bufferReady = false;
 
@@ -75,6 +95,7 @@ class FrameDelay {
     this.#active = true;
     this.#bufferReady = false;
     this.#mountOverlay();
+    this.#bindPlayerControls();
     this.#updateVideoVisibility();
     this.#startCaptureLoop();
     this.#bindVideoEvents();
@@ -88,6 +109,7 @@ class FrameDelay {
     this.#active = false;
     this.#stopCaptureLoop();
     this.#unbindVideoEvents();
+    this.#unbindPlayerControls();
     this.#video.classList.remove(HIDDEN_VIDEO_CLASS);
     this.#frameQueue = [];
     this.#unmountOverlay();
@@ -104,7 +126,11 @@ class FrameDelay {
       this.#container.querySelector(".html5-video-player") ||
       this.#container;
 
-    let overlay = player.querySelector(`.${OVERLAY_CLASS}`);
+    let overlay = this.#container.querySelector(`.${OVERLAY_CLASS}`);
+    const chromeBottom = player.querySelector(".ytp-chrome-bottom");
+    if (overlay && chromeBottom) {
+      player.insertBefore(overlay, chromeBottom);
+    }
     if (!overlay) {
       overlay = document.createElement("div");
       overlay.className = OVERLAY_CLASS;
@@ -120,6 +146,18 @@ class FrameDelay {
           pointer-events: none;
           z-index: ${OVERLAY_Z_INDEX};
           overflow: hidden;
+        }
+        #movie_player.${PLAYER_ACTIVE_CLASS} .ytp-chrome-bottom,
+        #movie_player.${PLAYER_ACTIVE_CLASS} .ytp-chrome-top {
+          z-index: 100 !important;
+        }
+        #movie_player.${PLAYER_ACTIVE_CLASS}.ytp-show-controls .ytp-chrome-bottom,
+        #movie_player.${PLAYER_ACTIVE_CLASS}.ytp-show-controls .ytp-chrome-top {
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+        #movie_player.${PLAYER_ACTIVE_CLASS}.ytp-show-controls .ytp-gradient-bottom {
+          opacity: 1 !important;
         }
         .${STATUS_CLASS} {
           position: absolute;
@@ -140,8 +178,12 @@ class FrameDelay {
           object-fit: contain;
           background: #000;
         }
+        .${OVERLAY_CLASS}:not(.${OVERLAY_VISIBLE_CLASS}) {
+          visibility: hidden;
+        }
         .${HIDDEN_VIDEO_CLASS} {
           opacity: 0 !important;
+          pointer-events: none !important;
         }
       `;
       if (!document.getElementById("sync-tube-styles")) {
@@ -152,26 +194,255 @@ class FrameDelay {
       if (computed.position === "static") {
         player.style.position = "relative";
       }
-      player.appendChild(overlay);
+      if (chromeBottom) {
+        player.insertBefore(overlay, chromeBottom);
+      } else {
+        player.appendChild(overlay);
+      }
     }
 
+    this.#overlayEl = overlay;
     this.#canvas = overlay.querySelector("canvas");
     this.#statusEl = overlay.querySelector(`.${STATUS_CLASS}`);
     this.#ctx = this.#canvas.getContext("2d", { alpha: false });
+    this.#captureCtx = null;
     this.#resizeCanvas();
 
     this.#resizeObserver?.disconnect();
-    this.#resizeObserver = new ResizeObserver(() => this.#resizeCanvas());
+    this.#resizeObserver = new ResizeObserver(() => {
+      this.#resizeCanvas();
+    });
     this.#resizeObserver.observe(this.#video);
     this.#resizeObserver.observe(player);
 
     document.addEventListener("fullscreenchange", this.#onFullscreenChange);
   }
 
+  #isYoutubeChromeTarget(target) {
+    return target instanceof Element && target.closest(CHROME_SELECTOR);
+  }
+
+  #shouldIgnorePlaybackGesture(event) {
+    return (
+      SYNC_TUBE.isAdPlaying(this.#container) ||
+      SYNC_TUBE.isAdTarget(event.target)
+    );
+  }
+
+  #scheduleControlsHide() {
+    clearTimeout(this.#controlsHideTimer);
+    this.#controlsHideTimer = setTimeout(() => {
+      this.#container.classList.remove("ytp-show-controls");
+    }, CONTROLS_HIDE_DELAY_MS);
+  }
+
+  #showControls() {
+    this.#container.classList.add("ytp-show-controls");
+    this.#scheduleControlsHide();
+  }
+
+  #findInteractionTarget() {
+    const player =
+      this.#container.querySelector(".html5-video-player") || this.#container;
+    return (
+      player.querySelector(".ytp-clickwrap") ||
+      player.querySelector(".html5-video-container") ||
+      this.#video
+    );
+  }
+
+  #eventInit(event) {
+    return {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      screenX: event.screenX,
+      screenY: event.screenY,
+      button: event.button,
+      buttons: event.buttons,
+      ctrlKey: event.ctrlKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      metaKey: event.metaKey,
+    };
+  }
+
+  #cancelLongPress() {
+    clearTimeout(this.#longPressTimer);
+    this.#longPressTimer = null;
+    if (this.#didLongPress) {
+      this.#video.playbackRate = this.#savedPlaybackRate;
+      this.#didLongPress = false;
+      this.#suppressNextClick = true;
+    }
+  }
+
+  #bindPlayerControls() {
+    this.#onPlayerPointerActivity = (event) => {
+      if (SYNC_TUBE.isAdPlaying(this.#container)) {
+        return;
+      }
+      if (event?.target && SYNC_TUBE.isAdTarget(event.target)) {
+        return;
+      }
+      this.#showControls();
+    };
+
+    this.#onPlayerPointerDown = (event) => {
+      if (
+        !this.#bufferReady ||
+        this.#shouldIgnorePlaybackGesture(event) ||
+        this.#isYoutubeChromeTarget(event.target)
+      ) {
+        return;
+      }
+      if (event.button !== 0) {
+        return;
+      }
+
+      this.#didLongPress = false;
+      this.#savedPlaybackRate = this.#video.playbackRate;
+      clearTimeout(this.#longPressTimer);
+      this.#longPressTimer = setTimeout(() => {
+        this.#didLongPress = true;
+        this.#video.playbackRate = LONG_PRESS_PLAYBACK_RATE;
+      }, LONG_PRESS_MS);
+    };
+
+    this.#onPlayerPointerUp = (event) => {
+      if (
+        !this.#bufferReady ||
+        this.#shouldIgnorePlaybackGesture(event) ||
+        this.#isYoutubeChromeTarget(event.target)
+      ) {
+        return;
+      }
+      this.#cancelLongPress();
+    };
+
+    this.#onPlayerClick = (event) => {
+      if (
+        !this.#bufferReady ||
+        this.#shouldIgnorePlaybackGesture(event) ||
+        this.#isYoutubeChromeTarget(event.target)
+      ) {
+        return;
+      }
+      if (this.#suppressNextClick) {
+        this.#suppressNextClick = false;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (this.#video.paused) {
+        this.#video.play().catch(() => {});
+      } else {
+        this.#video.pause();
+      }
+    };
+
+    this.#onPlayerDblClick = (event) => {
+      if (
+        !this.#bufferReady ||
+        this.#shouldIgnorePlaybackGesture(event) ||
+        this.#isYoutubeChromeTarget(event.target)
+      ) {
+        return;
+      }
+      const target = this.#findInteractionTarget();
+      target.dispatchEvent(
+        new MouseEvent("dblclick", this.#eventInit(event))
+      );
+    };
+
+    this.#container.classList.add(PLAYER_ACTIVE_CLASS);
+    this.#container.addEventListener(
+      "pointermove",
+      this.#onPlayerPointerActivity,
+      true
+    );
+    this.#container.addEventListener(
+      "pointerenter",
+      this.#onPlayerPointerActivity,
+      true
+    );
+    this.#container.addEventListener(
+      "pointerdown",
+      this.#onPlayerPointerDown,
+      true
+    );
+    this.#container.addEventListener("pointerup", this.#onPlayerPointerUp, true);
+    this.#container.addEventListener(
+      "pointercancel",
+      this.#onPlayerPointerUp,
+      true
+    );
+    this.#container.addEventListener("click", this.#onPlayerClick, true);
+    this.#container.addEventListener("dblclick", this.#onPlayerDblClick, true);
+  }
+
+  #unbindPlayerControls() {
+    clearTimeout(this.#controlsHideTimer);
+    this.#controlsHideTimer = null;
+    this.#cancelLongPress();
+
+    if (this.#onPlayerPointerActivity) {
+      this.#container.removeEventListener(
+        "pointermove",
+        this.#onPlayerPointerActivity,
+        true
+      );
+      this.#container.removeEventListener(
+        "pointerenter",
+        this.#onPlayerPointerActivity,
+        true
+      );
+    }
+
+    if (this.#onPlayerPointerDown) {
+      this.#container.removeEventListener(
+        "pointerdown",
+        this.#onPlayerPointerDown,
+        true
+      );
+    }
+    if (this.#onPlayerPointerUp) {
+      this.#container.removeEventListener(
+        "pointerup",
+        this.#onPlayerPointerUp,
+        true
+      );
+      this.#container.removeEventListener(
+        "pointercancel",
+        this.#onPlayerPointerUp,
+        true
+      );
+    }
+    if (this.#onPlayerClick) {
+      this.#container.removeEventListener("click", this.#onPlayerClick, true);
+    }
+    if (this.#onPlayerDblClick) {
+      this.#container.removeEventListener(
+        "dblclick",
+        this.#onPlayerDblClick,
+        true
+      );
+    }
+
+    this.#video.playbackRate = this.#savedPlaybackRate || 1;
+    this.#container.classList.remove(PLAYER_ACTIVE_CLASS, "ytp-show-controls");
+  }
+
   #unmountOverlay() {
     document.removeEventListener("fullscreenchange", this.#onFullscreenChange);
     const overlay = this.#container.querySelector(`.${OVERLAY_CLASS}`);
     overlay?.remove();
+    this.#overlayEl = null;
     this.#canvas = null;
     this.#ctx = null;
   }
@@ -190,6 +461,30 @@ class FrameDelay {
     if (this.#canvas.width !== w || this.#canvas.height !== h) {
       this.#canvas.width = w;
       this.#canvas.height = h;
+    }
+  }
+
+  /** 映像はプレイヤー全体に描画し、再生バーは z-index で上に重なる */
+  #drawVideoFrame(ctx, source) {
+    const vw = this.#video.videoWidth;
+    const vh = this.#video.videoHeight;
+    if (!ctx || !vw || !vh || !this.#canvas) {
+      return;
+    }
+    try {
+      ctx.drawImage(
+        source,
+        0,
+        0,
+        vw,
+        vh,
+        0,
+        0,
+        this.#canvas.width,
+        this.#canvas.height
+      );
+    } catch {
+      // ignore draw errors during transitions
     }
   }
 
@@ -226,10 +521,13 @@ class FrameDelay {
   };
 
   #updateVideoVisibility() {
-    if (this.#bufferReady && this.#delayMs > 0) {
+    const showOverlay = this.#bufferReady && this.#delayMs > 0;
+    if (showOverlay) {
       this.#video.classList.add(HIDDEN_VIDEO_CLASS);
+      this.#overlayEl?.classList.add(OVERLAY_VISIBLE_CLASS);
     } else {
       this.#video.classList.remove(HIDDEN_VIDEO_CLASS);
+      this.#overlayEl?.classList.remove(OVERLAY_VISIBLE_CLASS);
     }
   }
 
@@ -292,11 +590,7 @@ class FrameDelay {
         return;
       }
       this.#resizeCanvas();
-      try {
-        this.#ctx.drawImage(this.#video, 0, 0, this.#canvas.width, this.#canvas.height);
-      } catch {
-        // ignore draw errors during transitions
-      }
+      this.#drawVideoFrame(this.#ctx, this.#video);
       this.#rafId = requestAnimationFrame(draw);
     };
     draw();
@@ -341,13 +635,29 @@ class FrameDelay {
     if (this.#captureCanvas.width !== dw || this.#captureCanvas.height !== dh) {
       this.#captureCanvas.width = dw;
       this.#captureCanvas.height = dh;
+      this.#captureCtx = this.#captureCanvas.getContext("2d", {
+        alpha: false,
+        willReadFrequently: true,
+      });
     }
 
-    const capCtx = this.#captureCanvas.getContext("2d", { alpha: false });
+    const capCtx =
+      this.#captureCtx ||
+      this.#captureCanvas.getContext("2d", {
+        alpha: false,
+        willReadFrequently: true,
+      });
+    this.#captureCtx = capCtx;
+
+    this.#video.classList.remove(HIDDEN_VIDEO_CLASS);
     try {
-      capCtx.drawImage(this.#video, 0, 0, dw, dh);
+      this.#drawVideoFrame(capCtx, this.#video);
     } catch {
       return;
+    } finally {
+      if (this.#bufferReady && this.#delayMs > 0) {
+        this.#video.classList.add(HIDDEN_VIDEO_CLASS);
+      }
     }
 
     this.#frameQueue.push({

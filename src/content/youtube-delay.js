@@ -51,6 +51,14 @@ function applySettings() {
   }
 
   const player = findMoviePlayer();
+
+  if (SYNC_TUBE.isAdPlaying(player)) {
+    log("ad playing — extension paused");
+    teardown();
+    updateDebugStatus({ active: false, reason: "ad" });
+    return;
+  }
+
   const video = findMainVideo(player);
 
   if (!video || !player) {
@@ -146,10 +154,41 @@ function watchPlayerMount() {
 
 function startRetryLoop() {
   retryTimer = setInterval(() => {
-    if (settings.enabled && !frameDelay) {
+    if (settings.enabled && settings.delayMs > 0 && !frameDelay) {
       applySettings();
     }
   }, RETRY_INTERVAL_MS);
+}
+
+let adChangeTimer = null;
+
+function watchAdState() {
+  const onAdChange = () => {
+    if (!settings.enabled || settings.delayMs <= 0) {
+      return;
+    }
+    clearTimeout(adChangeTimer);
+    adChangeTimer = setTimeout(() => applySettings(), 150);
+  };
+
+  const attachToPlayer = () => {
+    const player = findMoviePlayer();
+    if (!player || player.dataset.syncTubeAdWatch) {
+      return;
+    }
+    player.dataset.syncTubeAdWatch = "1";
+    const observer = new MutationObserver(onAdChange);
+    observer.observe(player, {
+      attributes: true,
+      attributeFilter: ["class"],
+      subtree: true,
+      childList: true,
+    });
+  };
+
+  attachToPlayer();
+  const bodyObserver = new MutationObserver(attachToPlayer);
+  bodyObserver.observe(document.body, { childList: true, subtree: true });
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -180,4 +219,5 @@ log("content script loaded", location.href);
 loadSettings();
 watchNavigation();
 watchPlayerMount();
+watchAdState();
 startRetryLoop();

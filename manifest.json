@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sync Tube",
-  "version": "1.0.2",
+  "version": "1.0.12",
   "description": "Delay YouTube video to sync with Bluetooth headphone audio lag.",
   "permissions": ["storage"],
   "host_permissions": ["https://www.youtube.com/*"],
