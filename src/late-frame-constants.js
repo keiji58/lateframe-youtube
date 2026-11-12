@@ -1,4 +1,4 @@
-const SYNC_TUBE = {
+const LATE_FRAME = {
   STORAGE_KEYS: {
     enabled: "enabled",
     delayMs: "delayMs",
@@ -35,7 +35,7 @@ const SYNC_TUBE = {
     if (!player) {
       return false;
     }
-    for (const cls of SYNC_TUBE.AD_PLAYER_CLASSES) {
+    for (const cls of LATE_FRAME.AD_PLAYER_CLASSES) {
       if (player.classList.contains(cls)) {
         return true;
       }
@@ -47,7 +47,7 @@ const SYNC_TUBE = {
       ".ytp-ad-preview-container",
     ]) {
       const el = player.querySelector(selector);
-      if (SYNC_TUBE.isElementVisible(el)) {
+      if (LATE_FRAME.isElementVisible(el)) {
         return true;
       }
     }
@@ -57,7 +57,7 @@ const SYNC_TUBE = {
   isAdTarget(target) {
     return (
       target instanceof Element &&
-      !!target.closest(SYNC_TUBE.AD_SELECTOR)
+      !!target.closest(LATE_FRAME.AD_SELECTOR)
     );
   },
 };

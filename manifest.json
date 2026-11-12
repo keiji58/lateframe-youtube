@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "SyncTube",
+  "name": "LateFrame",
   "version": "1.0.12",
   "description": "Delay YouTube video to sync with Bluetooth headphone audio lag.",
   "permissions": ["storage"],
@@ -22,7 +22,7 @@
     {
       "matches": ["https://www.youtube.com/*"],
       "js": [
-        "src/sync-tube-constants.js",
+        "src/late-frame-constants.js",
         "src/content/frame-delay.js",
         "src/content/youtube-delay.js"
       ],

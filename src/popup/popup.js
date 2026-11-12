@@ -1,5 +1,5 @@
 const { DEFAULT_SETTINGS, MAX_DELAY_MS, PRESET_DELAYS_MS, STORAGE_KEYS } =
-  SYNC_TUBE;
+  LATE_FRAME;
 
 const enabledEl = document.getElementById("enabled");
 const delayMsEl = document.getElementById("delayMs");

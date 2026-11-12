@@ -1,4 +1,4 @@
-const { DEFAULT_SETTINGS, STORAGE_KEYS } = SYNC_TUBE;
+const { DEFAULT_SETTINGS, STORAGE_KEYS } = LATE_FRAME;
 
 const INIT_DEBOUNCE_MS = 500;
 const RETRY_INTERVAL_MS = 1000;
@@ -44,7 +44,7 @@ function applySettings() {
 
   const player = findMoviePlayer();
 
-  if (SYNC_TUBE.isAdPlaying(player)) {
+  if (LATE_FRAME.isAdPlaying(player)) {
     teardown();
     return;
   }
@@ -145,10 +145,10 @@ function watchAdState() {
 
   const attachToPlayer = () => {
     const player = findMoviePlayer();
-    if (!player || player.dataset.syncTubeAdWatch) {
+    if (!player || player.dataset.lateFrameAdWatch) {
       return;
     }
-    player.dataset.syncTubeAdWatch = "1";
+    player.dataset.lateFrameAdWatch = "1";
     const observer = new MutationObserver(onAdChange);
     observer.observe(player, {
       attributes: true,

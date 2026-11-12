@@ -1,10 +1,10 @@
-const FRAME_QUEUE_MAX = SYNC_TUBE.FRAME_QUEUE_MAX;
+const FRAME_QUEUE_MAX = LATE_FRAME.FRAME_QUEUE_MAX;
 
-const OVERLAY_CLASS = "sync-tube-overlay";
-const OVERLAY_VISIBLE_CLASS = "sync-tube-overlay-visible";
-const STATUS_CLASS = "sync-tube-status";
-const HIDDEN_VIDEO_CLASS = "sync-tube-video-hidden";
-const PLAYER_ACTIVE_CLASS = "sync-tube-player-active";
+const OVERLAY_CLASS = "late-frame-overlay";
+const OVERLAY_VISIBLE_CLASS = "late-frame-overlay-visible";
+const STATUS_CLASS = "late-frame-status";
+const HIDDEN_VIDEO_CLASS = "late-frame-video-hidden";
+const PLAYER_ACTIVE_CLASS = "late-frame-player-active";
 /** Video layer; chrome boosted via CSS when active */
 const OVERLAY_Z_INDEX = 60;
 const CONTROLS_HIDE_DELAY_MS = 2500;
@@ -164,8 +164,8 @@ class FrameDelay {
           pointer-events: none !important;
         }
       `;
-      if (!document.getElementById("sync-tube-styles")) {
-        style.id = "sync-tube-styles";
+      if (!document.getElementById("late-frame-styles")) {
+        style.id = "late-frame-styles";
         document.head.appendChild(style);
       }
       const computed = getComputedStyle(player);
@@ -202,8 +202,8 @@ class FrameDelay {
 
   #shouldIgnorePlaybackGesture(event) {
     return (
-      SYNC_TUBE.isAdPlaying(this.#container) ||
-      SYNC_TUBE.isAdTarget(event.target)
+      LATE_FRAME.isAdPlaying(this.#container) ||
+      LATE_FRAME.isAdTarget(event.target)
     );
   }
 
@@ -259,10 +259,10 @@ class FrameDelay {
 
   #bindPlayerControls() {
     this.#onPlayerPointerActivity = (event) => {
-      if (SYNC_TUBE.isAdPlaying(this.#container)) {
+      if (LATE_FRAME.isAdPlaying(this.#container)) {
         return;
       }
-      if (event?.target && SYNC_TUBE.isAdTarget(event.target)) {
+      if (event?.target && LATE_FRAME.isAdTarget(event.target)) {
         return;
       }
       this.#showControls();
@@ -646,7 +646,7 @@ class FrameDelay {
     this.#bufferReady = this.#checkBufferReady();
     if (this.#bufferReady && !wasReady) {
       this.#updateVideoVisibility();
-      this.#setStatus(`SyncTube: +${this.#delayMs}ms`, { ready: true });
+      this.#setStatus(`LateFrame: +${this.#delayMs}ms`, { ready: true });
     }
   }
 
