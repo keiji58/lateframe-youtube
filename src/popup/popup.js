@@ -4,11 +4,27 @@ const { DEFAULT_SETTINGS, MAX_DELAY_MS, PRESET_DELAYS_MS, STORAGE_KEYS } =
 const enabledEl = document.getElementById("enabled");
 const delayMsEl = document.getElementById("delayMs");
 const delayValueEl = document.getElementById("delayValue");
+const statusEl = document.getElementById("statusLine");
 const presetsEl = document.getElementById("presets");
 const delaySectionEl = document.querySelector(".delay-section");
 
 function updateDelayLabel(ms) {
-  delayValueEl.textContent = `${ms} ms`;
+  delayValueEl.textContent = String(ms);
+}
+
+function updateStatus() {
+  const enabled = enabledEl.checked;
+  const ms = parseInt(delayMsEl.value, 10);
+  if (!enabled) {
+    statusEl.textContent = "Off";
+    statusEl.className = "status off";
+  } else if (ms === 0) {
+    statusEl.textContent = "Set a delay above 0 to activate";
+    statusEl.className = "status zero";
+  } else {
+    statusEl.textContent = "Video delayed — audio sync active";
+    statusEl.className = "status on";
+  }
 }
 
 function setDelaySectionEnabled(enabled) {
@@ -52,6 +68,7 @@ async function loadSettings() {
   delayMsEl.value = String(delayMs);
   updateDelayLabel(delayMs);
   setDelaySectionEnabled(enabled);
+  updateStatus();
   renderPresets(delayMs);
 }
 
@@ -65,6 +82,7 @@ function saveSettings() {
   });
 
   setDelaySectionEnabled(enabled);
+  updateStatus();
   renderPresets(delayMs);
 }
 

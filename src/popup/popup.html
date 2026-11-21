@@ -8,23 +8,32 @@
   </head>
   <body>
     <header>
-      <h1>LateFrame</h1>
-      <p class="subtitle">YouTube video delay</p>
+      <div class="brand">
+        <svg width="26" height="26" viewBox="0 0 100 100" aria-hidden="true">
+          <rect x="30" y="8" width="62" height="50" rx="12" fill="none" stroke="#00B074" stroke-width="7" opacity="0.45" />
+          <rect x="8" y="34" width="62" height="50" rx="12" fill="#00B074" />
+          <polygon points="32,48 32,70 52,59" fill="#fff" />
+        </svg>
+        <div>
+          <h1>LateFrame</h1>
+          <p class="subtitle">YouTube video delay</p>
+        </div>
+      </div>
+      <label class="switch" title="Enable LateFrame">
+        <input type="checkbox" id="enabled" checked />
+        <span class="track"><span class="knob"></span></span>
+      </label>
     </header>
 
-    <label class="toggle-row">
-      <span>Enabled</span>
-      <input type="checkbox" id="enabled" checked />
-    </label>
-
     <section class="delay-section">
-      <div class="delay-header">
-        <label for="delayMs">Video delay</label>
-        <output id="delayValue" for="delayMs">0 ms</output>
+      <div class="delay-readout">
+        <output id="delayValue" for="delayMs">0</output><span class="unit">ms</span>
       </div>
+      <p id="statusLine" class="status off">Off</p>
       <input
         type="range"
         id="delayMs"
+        aria-label="Video delay"
         min="0"
         max="500"
         step="10"
@@ -33,15 +42,14 @@
       <div class="presets" id="presets"></div>
     </section>
 
-    <p class="hint warn">
-      Set <strong>video delay to at least 1 ms</strong> (nothing happens at 0).
-    </p>
-    <p class="hint">
-      After installing the extension, <strong>reload</strong> any open YouTube tabs.
-    </p>
-    <p class="hint">
-      If wireless headphones make audio feel late, raise the slider to match lip sync.
-    </p>
+    <details class="help">
+      <summary>How to use</summary>
+      <ul>
+        <li>If wireless headphones make audio feel late, raise the delay until lip sync matches.</li>
+        <li>At 0 ms, LateFrame does nothing.</li>
+        <li>After installing, reload any open YouTube tabs once.</li>
+      </ul>
+    </details>
 
     <script src="../late-frame-constants.js"></script>
     <script src="popup.js"></script>
