@@ -10,8 +10,11 @@ let initTimer = null;
 let retryTimer = null;
 let adChangeTimer = null;
 
-// --- 起動パス: loadSettings → applySettings ---
+// --- Boot: loadSettings → applySettings ---
 
+/**
+ * Load enabled/delay from sync storage and apply to the current player.
+ */
 async function loadSettings() {
   const stored = await chrome.storage.sync.get([
     STORAGE_KEYS.enabled,
@@ -24,6 +27,10 @@ async function loadSettings() {
   applySettings();
 }
 
+/**
+ * Attach or update FrameDelay when enabled with delay > 0; tear down otherwise.
+ * Skips while a YouTube ad is showing.
+ */
 function applySettings() {
   if (!settings.enabled || settings.delayMs <= 0) {
     teardown();
@@ -74,7 +81,7 @@ function findMainVideo(player) {
   if (!video) {
     return null;
   }
-  // readyState 0 でも要素があれば後から loadeddata で再試行する
+  // Even at readyState 0, keep the element if it has a source; loadeddata retries later.
   if (video.readyState === 0 && !video.src && !video.currentSrc) {
     return null;
   }
@@ -99,7 +106,7 @@ function scheduleInit() {
   }, INIT_DEBOUNCE_MS);
 }
 
-// --- 常駐監視 ---
+// --- Persistent watchers ---
 
 function watchNavigation() {
   let lastUrl = location.href;
@@ -166,7 +173,7 @@ function startRetryLoop() {
   }, RETRY_INTERVAL_MS);
 }
 
-// --- Popup からの設定変更 ---
+// --- Settings changes from the popup ---
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "sync") {
@@ -188,7 +195,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   applySettings();
 });
 
-// --- 起動 ---
+// --- Start ---
 
 loadSettings();
 watchNavigation();

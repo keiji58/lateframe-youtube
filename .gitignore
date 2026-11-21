@@ -33,3 +33,7 @@ yarn-error.log*
 *.zip
 dist/
 build/
+
+# Local AI / agent overrides (shared project configs may still be committed)
+.claude/settings.local.json
+CLAUDE.local.md

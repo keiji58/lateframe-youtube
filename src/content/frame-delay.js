@@ -46,12 +46,20 @@ class FrameDelay {
   #savedPlaybackRate = 1;
   #bufferReady = false;
 
+  /**
+   * @param {HTMLVideoElement} video Source video (audio stays here).
+   * @param {HTMLElement} playerRoot YouTube player root used for overlay mount and controls.
+   */
   constructor(video, playerRoot) {
     this.#video = video;
     this.#container = playerRoot;
     this.#captureCanvas = document.createElement("canvas");
   }
 
+  /**
+   * Set display delay in milliseconds. 0 keeps native video visible (no buffering).
+   * @param {number} ms
+   */
   setDelayMs(ms) {
     const prev = this.#delayMs;
     this.#delayMs = Math.max(0, ms);
@@ -61,6 +69,7 @@ class FrameDelay {
     }
   }
 
+  /** Mount overlay, bind controls, and start frame capture when delay > 0. */
   start() {
     if (this.#active) {
       return;
@@ -75,6 +84,7 @@ class FrameDelay {
     this.#setStatus("", { ready: false });
   }
 
+  /** Stop capture and restore the native video display. */
   stop() {
     if (!this.#active) {
       return;
@@ -88,6 +98,7 @@ class FrameDelay {
     this.#unmountOverlay();
   }
 
+  /** Stop and release observers; call when detaching from a video element. */
   destroy() {
     this.stop();
     this.#resizeObserver?.disconnect();
@@ -478,7 +489,7 @@ class FrameDelay {
     }
   }
 
-  /** 映像はプレイヤー全体に描画し、再生バーは z-index で上に重なる */
+  /** Draw video to the full player canvas; progress bar sits above via z-index. */
   #drawVideoFrame(ctx, source) {
     const vw = this.#video.videoWidth;
     const vh = this.#video.videoHeight;
@@ -725,7 +736,7 @@ class FrameDelay {
       }
     }
 
-    // ウォームアップ直後: 取れるだけ古いフレームを使う（遅延を最大化）
+    // Right after warmup: use the oldest available frame to maximize delay.
     if (!frame && this.#frameQueue.length > 0) {
       frame = this.#frameQueue[0];
     }

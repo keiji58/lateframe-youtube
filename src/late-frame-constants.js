@@ -40,7 +40,7 @@ const LATE_FRAME = {
         return true;
       }
     }
-    // DOM だけでは判定しない（非表示の広告用要素が常駐しているため）
+    // Do not trust DOM presence alone; hidden ad nodes often stay mounted.
     for (const selector of [
       ".ytp-ad-player-overlay",
       ".ytp-ad-module",

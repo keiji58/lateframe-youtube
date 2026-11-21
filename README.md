@@ -1,92 +1,79 @@
 # LateFrame
 
-YouTube の映像だけを遅延させ、無線ヘッドホンなどによる「音が遅れる」体感を補正する Chrome 拡張機能です。
+**English** | [日本語](README.ja.md)
 
-## 仕組み
+Chrome extension that delays **YouTube video** (not audio) so lip sync matches wireless / Bluetooth headphone lag.
 
-`<video>` 要素は映像と音声が一体のため、再生位置をずらすだけでは音声も一緒に動きます。LateFrame は次のように動作します。
+## Why
 
-1. 元の `<video>` は非表示のまま再生し、**音声はそのまま**出力する
-2. `requestVideoFrameCallback` でフレームをバッファに蓄える
-3. **Canvas オーバーレイ**に、設定した遅延（ms）分だけ古いフレームを描画する
+Bluetooth headphones often play audio a bit late. YouTube keeps video and audio locked together, so shifting playback time moves both. LateFrame leaves the audio alone and shows an older video frame instead.
 
-## インストール（開発用）
+## Install (developer / unpacked)
 
-1. Chrome で `chrome://extensions` を開く
-2. 「デベロッパーモード」をオン
-3. 「パッケージ化されていない拡張機能を読み込む」でこのフォルダを選択
+1. Open `chrome://extensions`
+2. Turn on **Developer mode**
+3. Click **Load unpacked** and select this repository folder (the one with `manifest.json`)
+4. Reload any YouTube tabs that were already open
 
-## 使い方
+Chrome Web Store packaging is not required to try it locally.
 
-1. 無線ヘッドホンを接続した状態で YouTube を再生
-2. ツールバーの LateFrame アイコンからポップアップを開く
-3. 「有効」をオンにする
-4. 「映像遅延」スライダーを **0 から少しずつ上げ**、口の動きと音が一致する値を探す
-5. プリセット（0 / 100 / 200 / 300 ms）で大まかに合わせてから微調整してもよい
+## Usage
 
-遅延が **0 ms** のときは処理を行わず、通常の YouTube 表示のままです。
+1. Connect wireless headphones and play a YouTube video
+2. Open the LateFrame popup from the toolbar
+3. Turn **Enabled** on
+4. Raise **Video delay** from 0 until mouth movement matches the audio  
+   Presets (0 / 100 / 200 / 300 ms) help you get close quickly
 
-## うまく効かないとき（トラブルシュート）
+At **0 ms**, LateFrame does nothing and YouTube looks normal.
 
-### 拡張機能一覧に「エラー」と出る
+## How it works
 
-**原因（v1.0.1 以前）**: content script で ES の `import` を使っており、Chrome MV3 では読み込みに失敗します（`Cannot use import statement outside a module` など）。
+1. The original `<video>` keeps playing (audio unchanged); its pixels are hidden when delay is active
+2. Frames are buffered with `requestVideoFrameCallback` when available
+3. A canvas overlay draws a frame that is N milliseconds older than the audio
 
-**対処**: **v1.0.2 以降**に更新し、拡張の「更新」ボタンを押してから YouTube を再読み込みしてください。エラー表示が消えていることを確認してから再度お試しください。
+## Permissions
 
-### よくある原因
+| Permission | Why |
+|------------|-----|
+| `storage` | Save enabled state and delay amount |
+| `https://www.youtube.com/*` | Run on YouTube watch pages |
 
-1. **映像遅延が 0 ms のまま** — スライダーを 100 ms 以上に上げてください（0 では何も起きません）。
-2. **YouTube を再読み込みしていない** — 拡張を入れたあと、既に開いていたタブは **F5 で再読み込み** が必要です。
-3. **バッファのウォームアップ** — 有効化直後、約 0.3〜0.5 秒はバッファが溜まるまで元の映像のままです。その後、左上に `LateFrame: +200ms` の表示が出れば動作中です。
-4. **遅延が小さすぎる** — Bluetooth のズレが 150 ms 程度なら、まず **200〜300 ms** で差が分かりやすいか確認してください。
+No account, analytics, or network calls beyond what the page already does.
 
-### 検証方法（DevTools）
+## Limitations
 
-1. YouTube の視聴ページで `F12` → **Elements**
-2. `.late-frame-overlay` を検索 — 見つかれば Canvas は挿入されています。
-3. オーバーレイ左上に `LateFrame: +Nms` が出ていれば遅延表示が始まっています。
+| Area | Notes |
+|------|--------|
+| Captions | YouTube captions are separate DOM; they are not delayed with the video |
+| CPU / memory | Higher resolution and frame rate cost more |
+| Live streams | Buffering is less stable; sync can drift |
+| Miniplayer / PiP | Normal watch page is the priority |
+| Ads | Delay is paused while an ad is showing |
+| Sites | YouTube only (`https://www.youtube.com/*`) |
 
-### 目視で差を確認するテスト
+## Troubleshooting
 
-- 手を叩く・メトロノームの動画で、**音は先・映像は後** になるはずです（遅延 300 ms 程度で分かりやすい）。
-- スライダーを 0 → 300 ms に変え、口の動きと音のズレが変わるか聞き比べる。
+1. **Delay still at 0 ms** — Raise the slider (0 ms is intentionally a no-op)
+2. **Installed but nothing happens** — Reload the YouTube tab once after installing or updating
+3. **Briefly looks unchanged** — About 0.3–0.5 s of warmup fills the frame buffer; then a `LateFrame: +Nms` label appears
+4. **Hard to notice** — Try 200–300 ms first, then fine-tune
 
-## 手動テストのチェックリスト
+Quick check: search the page DOM for `.late-frame-overlay`. If the overlay exists and the status label shows a delay, the canvas path is running.
 
-- [ ] 通常の動画視聴ページで遅延が効く
-- [ ] スライダー変更がリロードなしで反映される
-- [ ] 別の動画へ遷移しても再び効く
-- [ ] フルスクリーンで Canvas がプレイヤーに追従する
-- [ ] 動画ホバーで再生バー・設定ボタンが表示される
-- [ ] 有効オフで元の表示に戻る
+## Contributing
 
-## 既知の限界
+Issues and pull requests are welcome — small fixes count.
 
-| 項目 | 内容 |
-|------|------|
-| 字幕 | YouTube 字幕は別 DOM のため、映像と一緒には遅延しません |
-| CPU / メモリ | 高解像度・高フレームレートほど負荷が増えます |
-| ライブ配信 | バッファが安定しにくく、同期がぶれやすい場合があります |
-| ミニプレイヤー / PiP | 初版は通常の視聴画面を優先しています |
-| 再生バー | v1.0.8 でクリック再生/停止・長押し倍速を直接制御 |
-| 広告 | 広告再生中のみオフ（`ad-showing` 等）。v1.0.10 で誤検出を修正 |
-| 対象サイト | YouTube のみ（`https://www.youtube.com/*`） |
+Especially helpful:
 
-## プロジェクト構成
+- Bug reports with steps to reproduce (and Chrome version if you can)
+- Fixes when YouTube’s player DOM changes
+- Docs clarifications or better install / usage wording
 
-```
-late-frame/
-├── manifest.json
-├── icons/
-├── src/
-│   ├── content/
-│   │   ├── frame-delay.js    # RVFC + フレームキュー + Canvas
-│   │   └── youtube-delay.js  # プレイヤー検出・設定反映
-│   ├── popup/
-│   └── late-frame-constants.js  # 共有定数（import 不使用）
-```
+Open an issue first if you want to discuss a larger change. See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup and a short test checklist.
 
-## ライセンス
+## License
 
-MIT（必要に応じて変更してください）
+[MIT](LICENSE)
