@@ -8,32 +8,20 @@ let frameDelay = null;
 let attachedVideo = null;
 let initTimer = null;
 let retryTimer = null;
+let adChangeTimer = null;
 
-function findMoviePlayer() {
-  return document.getElementById("movie_player");
-}
+// --- 起動パス: loadSettings → applySettings ---
 
-function findMainVideo(player) {
-  if (!player) {
-    return null;
-  }
-  const video =
-    player.querySelector("video.html5-main-video") ||
-    player.querySelector("video");
-  if (!video) {
-    return null;
-  }
-  // readyState 0 でも要素があれば後から loadeddata で再試行する
-  if (video.readyState === 0 && !video.src && !video.currentSrc) {
-    return null;
-  }
-  return video;
-}
-
-function teardown() {
-  frameDelay?.destroy();
-  frameDelay = null;
-  attachedVideo = null;
+async function loadSettings() {
+  const stored = await chrome.storage.sync.get([
+    STORAGE_KEYS.enabled,
+    STORAGE_KEYS.delayMs,
+  ]);
+  settings = {
+    enabled: stored[STORAGE_KEYS.enabled] ?? DEFAULT_SETTINGS.enabled,
+    delayMs: stored[STORAGE_KEYS.delayMs] ?? DEFAULT_SETTINGS.delayMs,
+  };
+  applySettings();
 }
 
 function applySettings() {
@@ -66,24 +54,31 @@ function applySettings() {
   frameDelay.setDelayMs(settings.delayMs);
 }
 
-function scheduleInit() {
-  clearTimeout(initTimer);
-  initTimer = setTimeout(() => {
-    teardown();
-    applySettings();
-  }, INIT_DEBOUNCE_MS);
+function teardown() {
+  frameDelay?.destroy();
+  frameDelay = null;
+  attachedVideo = null;
 }
 
-async function loadSettings() {
-  const stored = await chrome.storage.sync.get([
-    STORAGE_KEYS.enabled,
-    STORAGE_KEYS.delayMs,
-  ]);
-  settings = {
-    enabled: stored[STORAGE_KEYS.enabled] ?? DEFAULT_SETTINGS.enabled,
-    delayMs: stored[STORAGE_KEYS.delayMs] ?? DEFAULT_SETTINGS.delayMs,
-  };
-  applySettings();
+function findMoviePlayer() {
+  return document.getElementById("movie_player");
+}
+
+function findMainVideo(player) {
+  if (!player) {
+    return null;
+  }
+  const video =
+    player.querySelector("video.html5-main-video") ||
+    player.querySelector("video");
+  if (!video) {
+    return null;
+  }
+  // readyState 0 でも要素があれば後から loadeddata で再試行する
+  if (video.readyState === 0 && !video.src && !video.currentSrc) {
+    return null;
+  }
+  return video;
 }
 
 function bindVideoLifecycle(video) {
@@ -95,6 +90,16 @@ function bindVideoLifecycle(video) {
   video.addEventListener("loadeddata", onReady, { once: false });
   video.addEventListener("playing", onReady, { once: false });
 }
+
+function scheduleInit() {
+  clearTimeout(initTimer);
+  initTimer = setTimeout(() => {
+    teardown();
+    applySettings();
+  }, INIT_DEBOUNCE_MS);
+}
+
+// --- 常駐監視 ---
 
 function watchNavigation() {
   let lastUrl = location.href;
@@ -123,16 +128,6 @@ function watchPlayerMount() {
 
   observer.observe(document.body, { childList: true, subtree: true });
 }
-
-function startRetryLoop() {
-  retryTimer = setInterval(() => {
-    if (settings.enabled && settings.delayMs > 0 && !frameDelay) {
-      applySettings();
-    }
-  }, RETRY_INTERVAL_MS);
-}
-
-let adChangeTimer = null;
 
 function watchAdState() {
   const onAdChange = () => {
@@ -163,6 +158,16 @@ function watchAdState() {
   bodyObserver.observe(document.body, { childList: true, subtree: true });
 }
 
+function startRetryLoop() {
+  retryTimer = setInterval(() => {
+    if (settings.enabled && settings.delayMs > 0 && !frameDelay) {
+      applySettings();
+    }
+  }, RETRY_INTERVAL_MS);
+}
+
+// --- Popup からの設定変更 ---
+
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "sync") {
     return;
@@ -182,6 +187,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
   applySettings();
 });
+
+// --- 起動 ---
 
 loadSettings();
 watchNavigation();
