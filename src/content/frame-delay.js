@@ -37,8 +37,10 @@ class FrameDelay {
   #onPlayerDblClick = null;
   #onPlayerPointerDown = null;
   #onPlayerPointerUp = null;
+  #onGlobalPointerUp = null;
   #controlsHideTimer = null;
   #longPressTimer = null;
+  #longPressPointerId = null;
   #didLongPress = false;
   #suppressNextClick = false;
   #savedPlaybackRate = 1;
@@ -250,11 +252,43 @@ class FrameDelay {
   #cancelLongPress() {
     clearTimeout(this.#longPressTimer);
     this.#longPressTimer = null;
+    this.#longPressPointerId = null;
+    this.#unbindGlobalPointerUp();
     if (this.#didLongPress) {
       this.#video.playbackRate = this.#savedPlaybackRate;
       this.#didLongPress = false;
       this.#suppressNextClick = true;
     }
+  }
+
+  #bindGlobalPointerUp() {
+    if (this.#onGlobalPointerUp) {
+      return;
+    }
+    this.#onGlobalPointerUp = (event) => {
+      if (
+        this.#longPressPointerId != null &&
+        event.pointerId !== this.#longPressPointerId
+      ) {
+        return;
+      }
+      this.#cancelLongPress();
+    };
+    document.addEventListener("pointerup", this.#onGlobalPointerUp, true);
+    document.addEventListener("pointercancel", this.#onGlobalPointerUp, true);
+  }
+
+  #unbindGlobalPointerUp() {
+    if (!this.#onGlobalPointerUp) {
+      return;
+    }
+    document.removeEventListener("pointerup", this.#onGlobalPointerUp, true);
+    document.removeEventListener(
+      "pointercancel",
+      this.#onGlobalPointerUp,
+      true
+    );
+    this.#onGlobalPointerUp = null;
   }
 
   #bindPlayerControls() {
@@ -280,23 +314,20 @@ class FrameDelay {
         return;
       }
 
-      this.#didLongPress = false;
+      // Restore any stuck long-press rate before sampling the baseline.
+      this.#cancelLongPress();
       this.#savedPlaybackRate = this.#video.playbackRate;
-      clearTimeout(this.#longPressTimer);
+      this.#longPressPointerId = event.pointerId;
+      this.#bindGlobalPointerUp();
       this.#longPressTimer = setTimeout(() => {
         this.#didLongPress = true;
         this.#video.playbackRate = LONG_PRESS_PLAYBACK_RATE;
       }, LONG_PRESS_MS);
     };
 
-    this.#onPlayerPointerUp = (event) => {
-      if (
-        !this.#bufferReady ||
-        this.#shouldIgnorePlaybackGesture(event) ||
-        this.#isYoutubeChromeTarget(event.target)
-      ) {
-        return;
-      }
+    // Always cancel — do not gate on chrome/ad targets, or the 2x timer can
+    // keep firing after the user already released.
+    this.#onPlayerPointerUp = () => {
       this.#cancelLongPress();
     };
 
@@ -380,6 +411,7 @@ class FrameDelay {
         this.#onPlayerPointerActivity,
         true
       );
+      this.#onPlayerPointerActivity = null;
     }
 
     if (this.#onPlayerPointerDown) {
@@ -388,6 +420,7 @@ class FrameDelay {
         this.#onPlayerPointerDown,
         true
       );
+      this.#onPlayerPointerDown = null;
     }
     if (this.#onPlayerPointerUp) {
       this.#container.removeEventListener(
@@ -400,9 +433,11 @@ class FrameDelay {
         this.#onPlayerPointerUp,
         true
       );
+      this.#onPlayerPointerUp = null;
     }
     if (this.#onPlayerClick) {
       this.#container.removeEventListener("click", this.#onPlayerClick, true);
+      this.#onPlayerClick = null;
     }
     if (this.#onPlayerDblClick) {
       this.#container.removeEventListener(
@@ -410,6 +445,7 @@ class FrameDelay {
         this.#onPlayerDblClick,
         true
       );
+      this.#onPlayerDblClick = null;
     }
 
     this.#video.playbackRate = this.#savedPlaybackRate || 1;
