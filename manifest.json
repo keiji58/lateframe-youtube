@@ -1,10 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "LateFrame",
-  "version": "1.0.12",
-  "description": "Delay YouTube video to sync with Bluetooth headphone audio lag.",
-  "permissions": ["storage"],
-  "host_permissions": ["https://www.youtube.com/*"],
+  "name": "__MSG_appName__",
+  "version": "1.0.13",
+  "default_locale": "en",
+  "description": "__MSG_appDesc__",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*"
+  ],
   "action": {
     "default_popup": "src/popup/popup.html",
     "default_icon": {
@@ -20,7 +25,9 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.youtube.com/*"],
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
       "js": [
         "src/late-frame-constants.js",
         "src/content/frame-delay.js",

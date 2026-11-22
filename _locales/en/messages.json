@@ -1,0 +1,50 @@
+{
+  "appName": {
+    "message": "LateFrame",
+    "description": "Extension name"
+  },
+  "appDesc": {
+    "message": "Delay YouTube video to sync with Bluetooth headphone audio lag.",
+    "description": "Extension short description"
+  },
+  "subtitle": {
+    "message": "YouTube video delay",
+    "description": "Popup subtitle under the brand name"
+  },
+  "enableToggle": {
+    "message": "Enable LateFrame",
+    "description": "Tooltip for the on/off switch"
+  },
+  "delaySlider": {
+    "message": "Video delay",
+    "description": "Accessible label for the delay slider"
+  },
+  "statusOff": {
+    "message": "Off",
+    "description": "Status when LateFrame is disabled"
+  },
+  "statusZero": {
+    "message": "Set a delay above 0 to activate",
+    "description": "Status when enabled but delay is 0 ms"
+  },
+  "statusOn": {
+    "message": "Video delayed — audio sync active",
+    "description": "Status when delay is active"
+  },
+  "howToUse": {
+    "message": "How to use",
+    "description": "Help section summary"
+  },
+  "helpTip1": {
+    "message": "If wireless headphones make audio feel late, raise the delay until lip sync matches.",
+    "description": "Help tip about adjusting delay for wireless headphones"
+  },
+  "helpTip2": {
+    "message": "At 0 ms, LateFrame does nothing.",
+    "description": "Help tip about 0 ms delay"
+  },
+  "helpTip3": {
+    "message": "After installing, reload any open YouTube tabs once.",
+    "description": "Help tip about reloading YouTube tabs after install"
+  }
+}

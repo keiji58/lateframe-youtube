@@ -16,10 +16,10 @@
         </svg>
         <div>
           <h1>LateFrame</h1>
-          <p class="subtitle">YouTube video delay</p>
+          <p class="subtitle" data-i18n="subtitle"></p>
         </div>
       </div>
-      <label class="switch" title="Enable LateFrame">
+      <label class="switch" data-i18n-title="enableToggle">
         <input type="checkbox" id="enabled" checked />
         <span class="track"><span class="knob"></span></span>
       </label>
@@ -29,11 +29,11 @@
       <div class="delay-readout">
         <output id="delayValue" for="delayMs">0</output><span class="unit">ms</span>
       </div>
-      <p id="statusLine" class="status off">Off</p>
+      <p id="statusLine" class="status off"></p>
       <input
         type="range"
         id="delayMs"
-        aria-label="Video delay"
+        data-i18n-aria-label="delaySlider"
         min="0"
         max="500"
         step="10"
@@ -43,11 +43,11 @@
     </section>
 
     <details class="help">
-      <summary>How to use</summary>
+      <summary data-i18n="howToUse"></summary>
       <ul>
-        <li>If wireless headphones make audio feel late, raise the delay until lip sync matches.</li>
-        <li>At 0 ms, LateFrame does nothing.</li>
-        <li>After installing, reload any open YouTube tabs once.</li>
+        <li data-i18n="helpTip1"></li>
+        <li data-i18n="helpTip2"></li>
+        <li data-i18n="helpTip3"></li>
       </ul>
     </details>
 

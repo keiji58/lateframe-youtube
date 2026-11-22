@@ -8,6 +8,24 @@ const statusEl = document.getElementById("statusLine");
 const presetsEl = document.getElementById("presets");
 const delaySectionEl = document.querySelector(".delay-section");
 
+function t(key) {
+  return chrome.i18n.getMessage(key);
+}
+
+function applyI18n() {
+  document.documentElement.lang = t("@@ui_locale") || "en";
+
+  for (const el of document.querySelectorAll("[data-i18n]")) {
+    el.textContent = t(el.dataset.i18n);
+  }
+  for (const el of document.querySelectorAll("[data-i18n-title]")) {
+    el.title = t(el.dataset.i18nTitle);
+  }
+  for (const el of document.querySelectorAll("[data-i18n-aria-label]")) {
+    el.setAttribute("aria-label", t(el.dataset.i18nAriaLabel));
+  }
+}
+
 function updateDelayLabel(ms) {
   delayValueEl.textContent = String(ms);
 }
@@ -16,13 +34,13 @@ function updateStatus() {
   const enabled = enabledEl.checked;
   const ms = parseInt(delayMsEl.value, 10);
   if (!enabled) {
-    statusEl.textContent = "Off";
+    statusEl.textContent = t("statusOff");
     statusEl.className = "status off";
   } else if (ms === 0) {
-    statusEl.textContent = "Set a delay above 0 to activate";
+    statusEl.textContent = t("statusZero");
     statusEl.className = "status zero";
   } else {
-    statusEl.textContent = "Video delayed — audio sync active";
+    statusEl.textContent = t("statusOn");
     statusEl.className = "status on";
   }
 }
@@ -85,6 +103,8 @@ function saveSettings() {
   updateStatus();
   renderPresets(delayMs);
 }
+
+applyI18n();
 
 enabledEl.addEventListener("change", saveSettings);
 delayMsEl.addEventListener("input", () => {

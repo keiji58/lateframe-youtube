@@ -1,0 +1,50 @@
+{
+  "appName": {
+    "message": "LateFrame",
+    "description": "Extension name"
+  },
+  "appDesc": {
+    "message": "YouTubeの動画を遅延させて、Bluetoothイヤホンの音ズレを解消します。",
+    "description": "Extension short description"
+  },
+  "subtitle": {
+    "message": "YouTube動画の音ズレ補正",
+    "description": "Popup subtitle under the brand name"
+  },
+  "enableToggle": {
+    "message": "LateFrameを有効にする",
+    "description": "Tooltip for the on/off switch"
+  },
+  "delaySlider": {
+    "message": "動画の遅延",
+    "description": "Accessible label for the delay slider"
+  },
+  "statusOff": {
+    "message": "オフ",
+    "description": "Status when LateFrame is disabled"
+  },
+  "statusZero": {
+    "message": "0より大きくすると補正が有効になります",
+    "description": "Status when enabled but delay is 0 ms"
+  },
+  "statusOn": {
+    "message": "映像を遅延中 — 音ズレ補正が有効",
+    "description": "Status when delay is active"
+  },
+  "howToUse": {
+    "message": "使い方",
+    "description": "Help section summary"
+  },
+  "helpTip1": {
+    "message": "映像と音がぴったり合うまで遅延を上げてください。",
+    "description": "Help tip about adjusting delay for wireless headphones"
+  },
+  "helpTip2": {
+    "message": "0msのときは、LateFrameは何もしません。",
+    "description": "Help tip about 0 ms delay"
+  },
+  "helpTip3": {
+    "message": "※インストール後は、開いているYouTubeタブを一度再読み込みしてください。",
+    "description": "Help tip about reloading YouTube tabs after install"
+  }
+}
