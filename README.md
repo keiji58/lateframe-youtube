@@ -64,7 +64,7 @@ Quick check: search the page DOM for `.late-frame-overlay`. If the overlay exist
 
 ## Contributing
 
-Issues and pull requests are welcome — small fixes count.
+Issues and pull requests are welcome — small fixes count. **Japanese is fine for issues.**
 
 Especially helpful:
 

@@ -2,6 +2,8 @@
 
 Thanks for taking an interest. Issues and pull requests are welcome — including small docs fixes.
 
+**Japanese is welcome for issues**（Issue は日本語でも OK）.
+
 Personal editor / AI tool preferences belong in your **global gitignore** (`git config --global core.excludesFile`). The repo only ignores project junk and a few local override files (see `.gitignore`).
 
 ## Setup
