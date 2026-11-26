@@ -8,14 +8,17 @@ Chrome extension that delays **YouTube video** (not audio) so lip sync matches w
 
 Bluetooth headphones often play audio a bit late. YouTube keeps video and audio locked together, so shifting playback time moves both. LateFrame leaves the audio alone and shows an older video frame instead.
 
-## Install (developer / unpacked)
+## Install
+
+**Chrome Web Store (recommended):**  
+[LateFrame - YouTube Video Delay](https://chromewebstore.google.com/detail/lateframe-youtube-video-d/lackgmnpkhcleloobckgdbakmpgggkab)
+
+### Developer / unpacked
 
 1. Open `chrome://extensions`
 2. Turn on **Developer mode**
 3. Click **Load unpacked** and select this repository folder (the one with `manifest.json`)
 4. Reload any YouTube tabs that were already open
-
-Chrome Web Store packaging is not required to try it locally.
 
 ## Usage
 

@@ -8,14 +8,17 @@ YouTube の**映像だけ**を遅延させ、無線 / Bluetooth ヘッドホン�
 
 Bluetooth ヘッドホンでは音が少し遅れることがあります。YouTube は映像と音声が一体なので、再生位置をずらすと両方動いてしまいます。LateFrame は音声はそのままにし、古い映像フレームを表示します。
 
-## インストール（開発用 / パッケージ化なし）
+## インストール
+
+**Chrome ウェブストア（推奨）:**  
+[LateFrame - YouTube Video Delay](https://chromewebstore.google.com/detail/lateframe-youtube-video-d/lackgmnpkhcleloobckgdbakmpgggkab)
+
+### 開発用 / パッケージ化なし
 
 1. `chrome://extensions` を開く
 2. **デベロッパーモード**をオンにする
 3. **パッケージ化されていない拡張機能を読み込む**で、このリポジトリのフォルダ（`manifest.json` がある場所）を選ぶ
 4. すでに開いていた YouTube タブは再読み込みする
-
-Chrome ウェブストアへの公開は、手元で試すために必須ではありません。
 
 ## 使い方
 
