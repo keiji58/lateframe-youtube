@@ -5,8 +5,10 @@ const OVERLAY_VISIBLE_CLASS = "late-frame-overlay-visible";
 const STATUS_CLASS = "late-frame-status";
 const HIDDEN_VIDEO_CLASS = "late-frame-video-hidden";
 const PLAYER_ACTIVE_CLASS = "late-frame-player-active";
-/** Video layer; chrome boosted via CSS when active */
+/** Video layer; chrome / captions boosted via CSS when active */
 const OVERLAY_Z_INDEX = 60;
+/** Above overlay, below player chrome (100) so CC stays visible */
+const CAPTION_Z_INDEX = 70;
 const CONTROLS_HIDE_DELAY_MS = 2500;
 const LONG_PRESS_MS = 450;
 const LONG_PRESS_PLAYBACK_RATE = 2;
@@ -134,6 +136,9 @@ class FrameDelay {
         #movie_player.${PLAYER_ACTIVE_CLASS} .ytp-chrome-bottom,
         #movie_player.${PLAYER_ACTIVE_CLASS} .ytp-chrome-top {
           z-index: 100 !important;
+        }
+        #movie_player.${PLAYER_ACTIVE_CLASS} .ytp-caption-window-container {
+          z-index: ${CAPTION_Z_INDEX} !important;
         }
         #movie_player.${PLAYER_ACTIVE_CLASS}.ytp-show-controls .ytp-chrome-bottom,
         #movie_player.${PLAYER_ACTIVE_CLASS}.ytp-show-controls .ytp-chrome-top {

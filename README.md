@@ -49,7 +49,7 @@ No account, analytics, or network calls beyond what the page already does.
 
 | Area | Notes |
 |------|--------|
-| Captions | YouTube captions are separate DOM; they are not delayed with the video |
+| Captions | Visible while delay is on, but still follow the live timeline (not delayed with the video) |
 | CPU / memory | Higher resolution and frame rate cost more |
 | Live streams | Buffering is less stable; sync can drift |
 | Miniplayer / PiP | Normal watch page is the priority |
