@@ -21,8 +21,15 @@ After changing content scripts, click **Reload** on the extension card, then rel
 - [ ] Navigating to another video re-attaches correctly
 - [ ] Fullscreen: canvas follows the player
 - [ ] Hover shows the progress bar / controls
+- [ ] Captions stay visible when delay is active
 - [ ] Disabling LateFrame restores the normal video
 - [ ] Ads: delay pauses while an ad is showing, resumes afterward
+
+## Branching
+
+- Default branch: `master`
+- Work on a feature/fix branch; open a pull request into `master`
+- Suggested names: `fix/...`, `feat/...`, `docs/...` (optional issue number, e.g. `fix/1-captions-visible`)
 
 ## Pull requests
 
