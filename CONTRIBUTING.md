@@ -24,6 +24,12 @@ After changing content scripts, click **Reload** on the extension card, then rel
 - [ ] Disabling LateFrame restores the normal video
 - [ ] Ads: delay pauses while an ad is showing, resumes afterward
 
+## Branching
+
+- Default branch: `master`
+- Work on a feature/fix branch; open a pull request into `master`
+- Suggested names: `fix/...`, `feat/...`, `docs/...` (optional issue number, e.g. `fix/1-captions-visible`)
+
 ## Pull requests
 
 - Keep changes focused
